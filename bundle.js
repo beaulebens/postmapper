@@ -2,7 +2,7 @@
 "use strict";
 
 var wpcom = require('wpcom'),
-    oauth = require('wpcom-oauth-cors')('41347'),
+    oauth = require('wpcom-oauth-cors')('41353'),
     googleMaps = require('google-maps-api')('AIzaSyA2kZ5n41fm5NaBSvdcCXSWO_Exq0smQRI'),
 		_     = require('lodash'),
 		q     = require('q'),
@@ -1621,7 +1621,7 @@ function resolve( onOk, onErr, onComplete, err ) {
 
 		if( onComplete )
 			onComplete( undefined, maps );
-	} else { 
+	} else {
 
 		onErr( err );
 
@@ -1631,12 +1631,12 @@ function resolve( onOk, onErr, onComplete, err ) {
 }
 
 
-/** 
+/**
  * Load a Google Maps API Object asynchronously. This module will return a Promise.
  * Which will on resolved will return the "google.maps" object.
  *
  * Or if you prefer you can simply use the callback instead.
- * 
+ *
  * @param  {String} apikey Your Google Maps API Key
  * @param  {Function} [onComplete] A callback which will return the google.maps object
  * @return {Promise} When this promise resolves it will return the google.maps object
@@ -1679,7 +1679,7 @@ module.exports = function( apikey, onComplete ) {
 				} else {
 
 					callBacks.push( [ onOk, onErr, onComplete ] );
-					
+
 					if( callBacks.length == 1 ){
 
 						script( 'https://maps.googleapis.com/maps/api/js?callback=$$mapsCB&key=' + key );
@@ -1687,7 +1687,7 @@ module.exports = function( apikey, onComplete ) {
 				}
 			}
 		});
-	};	
+	};
 };
 },{"promise":10,"scriptjs":16}],10:[function(require,module,exports){
 'use strict';
@@ -1909,13 +1909,13 @@ Promise.all = function (arr) {
 }
 
 Promise.reject = function (value) {
-  return new Promise(function (resolve, reject) { 
+  return new Promise(function (resolve, reject) {
     reject(value);
   });
 }
 
 Promise.race = function (values) {
-  return new Promise(function (resolve, reject) { 
+  return new Promise(function (resolve, reject) {
     values.forEach(function(value){
       Promise.resolve(value).then(resolve, reject);
     })
@@ -17244,11 +17244,11 @@ WPCOM.prototype.freshlyPressed = function (query, fn) {
 WPCOM.prototype.sendRequest = function (params, query, body, fn) {
   var msg = 'WARN! Don use `sendRequest() anymore. Use `this.req` method.';
   if (console && console.warn) {
-    console.warn(msg);  
+    console.warn(msg);
   } else {
     console.log(msg);
   }
-  
+
   return sendRequest.call(this, params, query, body, fn)
 };
 
@@ -17539,7 +17539,7 @@ Comment.prototype.reply = function (query, body, fn) {
     body = query;
     query = {};
   }
-  
+
   body = 'string' === typeof body ? { content: body } : body;
 
   var path = '/sites/' + this._sid + '/comments/' + this._cid + '/replies/new';
@@ -17678,7 +17678,7 @@ module.exports = CommentLike;
 var debug = require('debug')('wpcom:follow');
 
 /**
- * Follow 
+ * Follow
  *
  * @param {String} site_id - site id
  * @param {WPCOM} wpcom
@@ -17699,7 +17699,7 @@ function Follow(site_id, wpcom) {
 }
 
 /**
- * Get the follow status for current 
+ * Get the follow status for current
  * user on current blog sites
  *
  * @param {Object} [query]
@@ -17916,7 +17916,7 @@ Me.prototype.connections = function (query, fn) {
 
 module.exports = Me;
 },{"debug":39}],31:[function(require,module,exports){
-  
+
 /**
  * Module dependencies.
  */
@@ -18997,7 +18997,7 @@ Req.prototype.get = function (params, query, fn) {
     fn = query;
     query = {};
   }
-  
+
   return sendRequest.call(this.wpcom, params, query, null, fn);
 };
 
@@ -19070,7 +19070,7 @@ var debug = require('debug')('wpcom:send-request');
  */
 
 module.exports = function (params, query, body, fn) {
-  // `params` can be just the path (String)  
+  // `params` can be just the path (String)
   params = 'string' === typeof params ? { path : params } : params;
 
   debug('sendRequest(%o)', params.path);
@@ -20834,7 +20834,7 @@ Emitter.prototype.hasListeners = function(event){
  * TODO: combatible error handling?
  */
 
-module.exports = function(arr, fn, initial){  
+module.exports = function(arr, fn, initial){
   var idx = 0;
   var len = arr.length;
   var curr = arguments.length == 3
@@ -20844,7 +20844,7 @@ module.exports = function(arr, fn, initial){
   while (idx < len) {
     curr = fn.call(null, curr, arr[idx], ++idx, arr);
   }
-  
+
   return curr;
 };
 },{}]},{},[1]);
