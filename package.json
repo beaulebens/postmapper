@@ -1,0 +1,34 @@
+{
+  "name": "PostMapper",
+  "version": "1.0.0",
+  "description": "Simple experiment to request posts from WordPress.com and map them on a full-screen map.",
+  "main": "index.js",
+  "dependencies": {
+    "express": "^4.13.0",
+    "wpcom": "^4.5.0"
+  },
+  "devDependencies": {},
+  "scripts": {
+    "start": "node index.js",
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "bundle": "browserify main.js -o www/bundle.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://beaulebens@github.com/beaulebens/postmapper.git"
+  },
+  "keywords": [
+    "map",
+    "geo",
+    "wordpress",
+    "wordpress.com",
+    "wpcom",
+    "javascript"
+  ],
+  "author": "Beau Lebens",
+  "license": "GPL",
+  "bugs": {
+    "url": "https://github.com/beaulebens/postmapper/issues"
+  },
+  "homepage": "https://github.com/beaulebens/postmapper"
+}
