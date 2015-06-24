@@ -1,148 +1,37 @@
 (function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof require=="function"&&require;if(!u&&a)return a(o,!0);if(i)return i(o,!0);var f=new Error("Cannot find module '"+o+"'");throw f.code="MODULE_NOT_FOUND",f}var l=n[o]={exports:{}};t[o][0].call(l.exports,function(e){var n=t[o][1][e];return s(n?n:e)},l,l.exports,e,t,n,r)}return n[o].exports}var i=typeof require=="function"&&require;for(var o=0;o<r.length;o++)s(r[o]);return s})({1:[function(require,module,exports){
-"use strict";
 
-var wpcom = require('wpcom'),
-    oauth = require('wpcom-oauth-cors')('41347'),
-    googleMaps = require('google-maps-api')('AIzaSyA2kZ5n41fm5NaBSvdcCXSWO_Exq0smQRI'),
-		_     = require('lodash'),
-		q     = require('q'),
-		mapCanvas,
-		mapMarkers = [],
-		mapBounds = false,
-		mapInfoWindow;
-
-// Request auth to a blog so we can get posts and map them
-oauth.get(function(auth) {
-	var wpc = wpcom(auth.access_token),
-		  mySite = wpc.site(auth.site_id),
-			posts = [],
-			mapsReady = q.defer();
-
-	// Start loading the maps, because they're slow
-	googleMaps().then( function() {
-		// Initiate fullscreen map
-		var mapOptions = {
-			zoom: 3,
-			center: new google.maps.LatLng(39.7391500, -104.9847000) // Hey, Denver!
-	  };
-	  mapCanvas = new google.maps.Map(document.getElementById('map-canvas'), mapOptions);
-
-		// Indicate our map is ready for markers
-		mapsReady.resolve();
-	} );
-
-	// Get a batch of postsList
-  mySite.postsList({ number: 50 }, function(err, list) {
-		if (!err) {
-			// Extract out just the posts with geo data
-			posts  = _.filter(list.posts, function(p){
-				return _.has(p, "geo.latitude") && _.has(p, "geo.longitude");
-			});
-
-			mapsReady.promise.then(function(){
-				// Map each post, dropping them into place on a staggered timescale
-				_.each(posts, function(post,i){
-					setTimeout(function(){
-						addPostMarkerWithInfo(post,mapCanvas);
-					}, i * 100);
-				});
-
-				// Create an InfoWindow that we can reference later
-				mapInfoWindow = new google.maps.InfoWindow();
-			});
-		}
-	});
-});
-
-function addPostMarkerWithInfo(post, map) {
-	var marker = new google.maps.Marker({
-    map: map,
-    animation: google.maps.Animation.DROP,
-    position: new google.maps.LatLng(post.geo.latitude, post.geo.longitude)
-  });
-	mapMarkers.push(marker);
-
-	// Create an infowindow with the details for the post (marker) that was clicked
-	google.maps.event.addListener(marker, 'click', function(){
-		mapInfoWindow.setContent(getInfoStringFromPost(post));
-		mapInfoWindow.open(map, marker);
-	});
-}
-
-function getInfoStringFromPost(post) {
-	return '<div class="infowin">'+
-					'<img src="' + post.author.avatar_URL + '" width="96" height="96" style="border-radius: 50%; margin-right: 1em;" align="left" />'+
-					'<h1><a href="' + post.URL + '" target="_blank">' + post.title + '</a></h1>'+
-					'<h2>' + post.geo.address + '</h2>'+
-				'</div>';
-}
-
-},{"google-maps-api":9,"lodash":17,"q":18,"wpcom":23,"wpcom-oauth-cors":19}],2:[function(require,module,exports){
-
-},{}],3:[function(require,module,exports){
+},{}],2:[function(require,module,exports){
 // shim for using process in browser
 
 var process = module.exports = {};
 var queue = [];
 var draining = false;
-var currentQueue;
-var queueIndex = -1;
-
-function cleanUpNextTick() {
-    draining = false;
-    if (currentQueue.length) {
-        queue = currentQueue.concat(queue);
-    } else {
-        queueIndex = -1;
-    }
-    if (queue.length) {
-        drainQueue();
-    }
-}
 
 function drainQueue() {
     if (draining) {
         return;
     }
-    var timeout = setTimeout(cleanUpNextTick);
     draining = true;
-
+    var currentQueue;
     var len = queue.length;
     while(len) {
         currentQueue = queue;
         queue = [];
-        while (++queueIndex < len) {
-            currentQueue[queueIndex].run();
+        var i = -1;
+        while (++i < len) {
+            currentQueue[i]();
         }
-        queueIndex = -1;
         len = queue.length;
     }
-    currentQueue = null;
     draining = false;
-    clearTimeout(timeout);
 }
-
 process.nextTick = function (fun) {
-    var args = new Array(arguments.length - 1);
-    if (arguments.length > 1) {
-        for (var i = 1; i < arguments.length; i++) {
-            args[i - 1] = arguments[i];
-        }
-    }
-    queue.push(new Item(fun, args));
-    if (queue.length === 1 && !draining) {
+    queue.push(fun);
+    if (!draining) {
         setTimeout(drainQueue, 0);
     }
 };
 
-// v8 likes predictible objects
-function Item(fun, array) {
-    this.fun = fun;
-    this.array = array;
-}
-Item.prototype.run = function () {
-    this.fun.apply(null, this.array);
-};
 process.title = 'browser';
 process.browser = true;
 process.env = {};
@@ -171,22 +60,17 @@ process.chdir = function (dir) {
 };
 process.umask = function() { return 0; };
 
-},{}],4:[function(require,module,exports){
+},{}],3:[function(require,module,exports){
 (function (global){
-/*! https://mths.be/punycode v1.3.2 by @mathias */
+/*! http://mths.be/punycode v1.2.4 by @mathias */
 ;(function(root) {
 
 	/** Detect free variables */
-	var freeExports = typeof exports == 'object' && exports &&
-		!exports.nodeType && exports;
+	var freeExports = typeof exports == 'object' && exports;
 	var freeModule = typeof module == 'object' && module &&
-		!module.nodeType && module;
+		module.exports == freeExports && module;
 	var freeGlobal = typeof global == 'object' && global;
-	if (
-		freeGlobal.global === freeGlobal ||
-		freeGlobal.window === freeGlobal ||
-		freeGlobal.self === freeGlobal
-	) {
+	if (freeGlobal.global === freeGlobal || freeGlobal.window === freeGlobal) {
 		root = freeGlobal;
 	}
 
@@ -212,8 +96,8 @@ process.umask = function() { return 0; };
 
 	/** Regular expressions */
 	regexPunycode = /^xn--/,
-	regexNonASCII = /[^\x20-\x7E]/, // unprintable ASCII chars + non-ASCII chars
-	regexSeparators = /[\x2E\u3002\uFF0E\uFF61]/g, // RFC 3490 separators
+	regexNonASCII = /[^ -~]/, // unprintable ASCII chars + non-ASCII chars
+	regexSeparators = /\x2E|\u3002|\uFF0E|\uFF61/g, // RFC 3490 separators
 
 	/** Error messages */
 	errors = {
@@ -252,37 +136,23 @@ process.umask = function() { return 0; };
 	 */
 	function map(array, fn) {
 		var length = array.length;
-		var result = [];
 		while (length--) {
-			result[length] = fn(array[length]);
+			array[length] = fn(array[length]);
 		}
-		return result;
+		return array;
 	}
 
 	/**
-	 * A simple `Array#map`-like wrapper to work with domain name strings or email
-	 * addresses.
+	 * A simple `Array#map`-like wrapper to work with domain name strings.
 	 * @private
-	 * @param {String} domain The domain name or email address.
+	 * @param {String} domain The domain name.
 	 * @param {Function} callback The function that gets called for every
 	 * character.
 	 * @returns {Array} A new string of characters returned by the callback
 	 * function.
 	 */
 	function mapDomain(string, fn) {
-		var parts = string.split('@');
-		var result = '';
-		if (parts.length > 1) {
-			// In email addresses, only the domain name should be punycoded. Leave
-			// the local part (i.e. everything up to `@`) intact.
-			result = parts[0] + '@';
-			string = parts[1];
-		}
-		// Avoid `split(regex)` for IE8 compatibility. See #17.
-		string = string.replace(regexSeparators, '\x2E');
-		var labels = string.split('.');
-		var encoded = map(labels, fn).join('.');
-		return result + encoded;
+		return map(string.split(regexSeparators), fn).join('.');
 	}
 
 	/**
@@ -292,7 +162,7 @@ process.umask = function() { return 0; };
 	 * UCS-2 exposes as separate characters) into a single code point,
 	 * matching UTF-16.
 	 * @see `punycode.ucs2.encode`
-	 * @see <https://mathiasbynens.be/notes/javascript-encoding>
+	 * @see <http://mathiasbynens.be/notes/javascript-encoding>
 	 * @memberOf punycode.ucs2
 	 * @name decode
 	 * @param {String} string The Unicode input string (UCS-2).
@@ -501,8 +371,8 @@ process.umask = function() { return 0; };
 	}
 
 	/**
-	 * Converts a string of Unicode symbols (e.g. a domain name label) to a
-	 * Punycode string of ASCII-only symbols.
+	 * Converts a string of Unicode symbols to a Punycode string of ASCII-only
+	 * symbols.
 	 * @memberOf punycode
 	 * @param {String} input The string of Unicode symbols.
 	 * @returns {String} The resulting Punycode string of ASCII-only symbols.
@@ -615,18 +485,17 @@ process.umask = function() { return 0; };
 	}
 
 	/**
-	 * Converts a Punycode string representing a domain name or an email address
-	 * to Unicode. Only the Punycoded parts of the input will be converted, i.e.
-	 * it doesn't matter if you call it on a string that has already been
-	 * converted to Unicode.
+	 * Converts a Punycode string representing a domain name to Unicode. Only the
+	 * Punycoded parts of the domain name will be converted, i.e. it doesn't
+	 * matter if you call it on a string that has already been converted to
+	 * Unicode.
 	 * @memberOf punycode
-	 * @param {String} input The Punycoded domain name or email address to
-	 * convert to Unicode.
+	 * @param {String} domain The Punycode domain name to convert to Unicode.
 	 * @returns {String} The Unicode representation of the given Punycode
 	 * string.
 	 */
-	function toUnicode(input) {
-		return mapDomain(input, function(string) {
+	function toUnicode(domain) {
+		return mapDomain(domain, function(string) {
 			return regexPunycode.test(string)
 				? decode(string.slice(4).toLowerCase())
 				: string;
@@ -634,18 +503,15 @@ process.umask = function() { return 0; };
 	}
 
 	/**
-	 * Converts a Unicode string representing a domain name or an email address to
-	 * Punycode. Only the non-ASCII parts of the domain name will be converted,
-	 * i.e. it doesn't matter if you call it with a domain that's already in
-	 * ASCII.
+	 * Converts a Unicode string representing a domain name to Punycode. Only the
+	 * non-ASCII parts of the domain name will be converted, i.e. it doesn't
+	 * matter if you call it with a domain that's already in ASCII.
 	 * @memberOf punycode
-	 * @param {String} input The domain name or email address to convert, as a
-	 * Unicode string.
-	 * @returns {String} The Punycode representation of the given domain name or
-	 * email address.
+	 * @param {String} domain The domain name to convert, as a Unicode string.
+	 * @returns {String} The Punycode representation of the given domain name.
 	 */
-	function toASCII(input) {
-		return mapDomain(input, function(string) {
+	function toASCII(domain) {
+		return mapDomain(domain, function(string) {
 			return regexNonASCII.test(string)
 				? 'xn--' + encode(string)
 				: string;
@@ -661,11 +527,11 @@ process.umask = function() { return 0; };
 		 * @memberOf punycode
 		 * @type String
 		 */
-		'version': '1.3.2',
+		'version': '1.2.4',
 		/**
 		 * An object of methods to convert from JavaScript's internal character
 		 * representation (UCS-2) to Unicode code points, and back.
-		 * @see <https://mathiasbynens.be/notes/javascript-encoding>
+		 * @see <http://mathiasbynens.be/notes/javascript-encoding>
 		 * @memberOf punycode
 		 * @type Object
 		 */
@@ -690,8 +556,8 @@ process.umask = function() { return 0; };
 		define('punycode', function() {
 			return punycode;
 		});
-	} else if (freeExports && freeModule) {
-		if (module.exports == freeExports) { // in Node.js or RingoJS v0.8.0+
+	} else if (freeExports && !freeExports.nodeType) {
+		if (freeModule) { // in Node.js or RingoJS v0.8.0+
 			freeModule.exports = punycode;
 		} else { // in Narwhal or RingoJS v0.7.0-
 			for (key in punycode) {
@@ -705,7 +571,7 @@ process.umask = function() { return 0; };
 }(this));
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{}],5:[function(require,module,exports){
+},{}],4:[function(require,module,exports){
 // Copyright Joyent, Inc. and other Node contributors.
 //
 // Permission is hereby granted, free of charge, to any person obtaining a
@@ -791,7 +657,7 @@ var isArray = Array.isArray || function (xs) {
   return Object.prototype.toString.call(xs) === '[object Array]';
 };
 
-},{}],6:[function(require,module,exports){
+},{}],5:[function(require,module,exports){
 // Copyright Joyent, Inc. and other Node contributors.
 //
 // Permission is hereby granted, free of charge, to any person obtaining a
@@ -878,13 +744,13 @@ var objectKeys = Object.keys || function (obj) {
   return res;
 };
 
-},{}],7:[function(require,module,exports){
+},{}],6:[function(require,module,exports){
 'use strict';
 
 exports.decode = exports.parse = require('./decode');
 exports.encode = exports.stringify = require('./encode');
 
-},{"./decode":5,"./encode":6}],8:[function(require,module,exports){
+},{"./decode":4,"./encode":5}],7:[function(require,module,exports){
 // Copyright Joyent, Inc. and other Node contributors.
 //
 // Permission is hereby granted, free of charge, to any person obtaining a
@@ -1593,7 +1459,86 @@ function isNullOrUndefined(arg) {
   return  arg == null;
 }
 
-},{"punycode":4,"querystring":7}],9:[function(require,module,exports){
+},{"punycode":3,"querystring":6}],8:[function(require,module,exports){
+"use strict";
+
+var wpcom = require('wpcom'),
+    oauth = require('wpcom-oauth-cors')('41347'),
+    googleMaps = require('google-maps-api')('AIzaSyA2kZ5n41fm5NaBSvdcCXSWO_Exq0smQRI'),
+		_     = require('lodash'),
+		q     = require('q'),
+		mapCanvas,
+		mapMarkers = [],
+		mapBounds = false,
+		mapInfoWindow;
+
+// Request auth to a blog so we can get posts and map them
+oauth.get(function(auth) {
+	var wpc = wpcom(auth.access_token),
+		  mySite = wpc.site(auth.site_id),
+			posts = [],
+			mapsReady = q.defer();
+
+	// Start loading the maps, because they're slow
+	googleMaps().then( function() {
+		// Initiate fullscreen map
+		var mapOptions = {
+			zoom: 3,
+			center: new google.maps.LatLng(39.7391500, -104.9847000) // Hey, Denver!
+	  };
+	  mapCanvas = new google.maps.Map(document.getElementById('map-canvas'), mapOptions);
+
+		// Indicate our map is ready for markers
+		mapsReady.resolve();
+	} );
+
+	// Get a batch of postsList
+  mySite.postsList({ number: 50 }, function(err, list) {
+		if (!err) {
+			// Extract out just the posts with geo data
+			posts  = _.filter(list.posts, function(p){
+				return _.has(p, "geo.latitude") && _.has(p, "geo.longitude");
+			});
+
+			mapsReady.promise.then(function(){
+				// Map each post, dropping them into place on a staggered timescale
+				_.each(posts, function(post,i){
+					setTimeout(function(){
+						addPostMarkerWithInfo(post,mapCanvas);
+					}, i * 100);
+				});
+
+				// Create an InfoWindow that we can reference later
+				mapInfoWindow = new google.maps.InfoWindow();
+			});
+		}
+	});
+});
+
+function addPostMarkerWithInfo(post, map) {
+	var marker = new google.maps.Marker({
+    map: map,
+    animation: google.maps.Animation.DROP,
+    position: new google.maps.LatLng(post.geo.latitude, post.geo.longitude)
+  });
+	mapMarkers.push(marker);
+
+	// Create an infowindow with the details for the post (marker) that was clicked
+	google.maps.event.addListener(marker, 'click', function(){
+		mapInfoWindow.setContent(getInfoStringFromPost(post));
+		mapInfoWindow.open(map, marker);
+	});
+}
+
+function getInfoStringFromPost(post) {
+	return '<div class="infowin">'+
+					'<img src="' + post.author.avatar_URL + '" width="96" height="96" style="border-radius: 50%; margin-right: 1em;" align="left" />'+
+					'<h1><a href="' + post.URL + '" target="_blank">' + post.title + '</a></h1>'+
+					'<h2>' + post.geo.address + '</h2>'+
+				'</div>';
+}
+
+},{"google-maps-api":9,"lodash":17,"q":18,"wpcom":23,"wpcom-oauth-cors":19}],9:[function(require,module,exports){
 /** @module google-maps-api */
 
 var script = require( 'scriptjs' ),
@@ -2110,7 +2055,7 @@ module.exports = asap;
 
 
 }).call(this,require('_process'))
-},{"_process":3}],16:[function(require,module,exports){
+},{"_process":2}],16:[function(require,module,exports){
 /*!
   * $script.js JS loader & dependency manager
   * https://github.com/ded/script.js
@@ -16522,7 +16467,7 @@ return Q;
 });
 
 }).call(this,require('_process'))
-},{"_process":3}],19:[function(require,module,exports){
+},{"_process":2}],19:[function(require,module,exports){
 
 /**
  * Module dependencies.
@@ -16652,7 +16597,7 @@ exports.reset = function(){
 exports.token = function(){
   return localStorage.wp_oauth ? JSON.parse(localStorage.wp_oauth) : null;
 };
-},{"debug":20,"querystring":7,"url":8}],20:[function(require,module,exports){
+},{"debug":20,"querystring":6,"url":7}],20:[function(require,module,exports){
 
 /**
  * This is the web browser implementation of `debug()`.
@@ -18103,7 +18048,7 @@ Media.prototype['delete'] = Media.prototype.del = function (query, fn) {
  */
 
 module.exports = Media;
-},{"debug":39,"fs":2}],32:[function(require,module,exports){
+},{"debug":39,"fs":1}],32:[function(require,module,exports){
 
 /**
  * Module dependencies.
@@ -20847,4 +20792,4 @@ module.exports = function(arr, fn, initial){
   
   return curr;
 };
-},{}]},{},[1]);
+},{}]},{},[8]);
