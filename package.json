@@ -5,7 +5,11 @@
   "main": "index.js",
   "dependencies": {
     "express": "^4.13.0",
-    "wpcom": "^4.5.0"
+    "google-maps-api": "^1.0.2",
+    "lodash": "^3.9.3",
+    "q": "^1.4.1",
+    "wpcom": "^4.5.0",
+    "wpcom-oauth-cors": "^1.0.0"
   },
   "devDependencies": {},
   "scripts": {
