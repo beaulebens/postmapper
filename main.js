@@ -31,7 +31,7 @@ oauth.get(function(auth) {
 	} );
 
 	// Get a batch of postsList
-  mySite.postsList({ number: 50 }, function(err, list) {
+  mySite.postsList({ number: 50, fields: "author,URL,title,geo" }, function(err, list) {
 		if (!err) {
 			// Extract out just the posts with geo data
 			posts  = _.filter(list.posts, function(p){
